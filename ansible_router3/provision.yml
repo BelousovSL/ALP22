@@ -1,0 +1,48 @@
+---
+- name: Сustomization  
+  hosts: servers  
+  become: yes  
+  tasks:
+  - name: Update and upgrade apt packages
+    apt:
+      update_cache: yes
+      upgrade: yes
+
+  # Обновляем пакеты и устанавливаем FRR
+  - name: install FRR packages
+    apt:
+      name: 
+        - frr
+        - frr-pythontools
+      state: present
+      update_cache: true
+
+  - name: Switch On ip_forward
+    ansible.posix.sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      sysctl_set: true
+      state: present
+      reload: true
+
+  - name: copy daemons
+    copy:
+      src: daemons
+      dest: /etc/frr/daemons
+      owner: frr
+      group: frr
+      mode: 0640
+
+  - name: copy frr.conf
+    copy:
+      src: frr.conf
+      dest: /etc/frr/frr.conf
+      owner: frr
+      group: frr
+      mode: 0640
+
+  - name: restart FRR
+    service:
+      name: frr
+      state: restarted
+      enabled: true
